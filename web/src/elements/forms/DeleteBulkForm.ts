@@ -215,7 +215,7 @@ export class DeleteBulkForm<T> extends AKModal {
     protected override render(): TemplateResult {
         const objectCount = Array.from(this.objects).length;
 
-        return html`<div class="pf-c-modal-box__body">
+        return html`<div class="ak-modal__body">
                 <form class="pf-c-form pf-m-horizontal">
                     <p class="pf-c-title">
                         ${this.actionSubtext ||
@@ -226,7 +226,7 @@ export class DeleteBulkForm<T> extends AKModal {
                     <slot name="notice"></slot>
                 </form>
             </div>
-            <div class="pf-c-modal-box__body">
+            <div class="ak-modal__body">
                 <ak-delete-objects-table
                     .objects=${this.objects}
                     .usedBy=${this.usedBy}
@@ -234,7 +234,7 @@ export class DeleteBulkForm<T> extends AKModal {
                 >
                 </ak-delete-objects-table>
             </div>
-            <fieldset class="pf-c-modal-box__footer">
+            <fieldset class="ak-modal__footer">
                 <legend class="sr-only">${msg("Form actions")}</legend>
 
                 <ak-spinner-button .callAction=${this.confirm} class="pf-m-danger">

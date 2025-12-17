@@ -32,7 +32,7 @@ export const MODAL_BUTTON_STYLES = css`
         cursor: initial;
         user-select: text;
     }
-    .pf-c-modal-box > .pf-c-button + * {
+    .ak-modal > .pf-c-button + * {
         margin-right: 0;
     }
     /* fix multiple selects height */
@@ -58,8 +58,8 @@ export abstract class ModalButton extends AKModal {
             .locked {
                 overflow-y: hidden !important;
             }
-            .pf-c-modal-box.pf-m-xl {
-                --pf-c-modal-box--Width: calc(1.5 * var(--pf-c-modal-box--m-lg--lg--MaxWidth));
+            .ak-modal.pf-m-xl {
+                --ak-modal--Width: calc(1.5 * var(--ak-modal--m-lg--lg--MaxWidth));
             }
         `,
     ];
@@ -115,7 +115,7 @@ export abstract class ModalButton extends AKModal {
         return html`<div class="pf-c-backdrop" @click=${this.#backdropListener} role="presentation">
             <div class="pf-l-bullseye" role="presentation">
                 <div
-                    class="pf-c-modal-box ${this.size} ${this.locked ? "locked" : ""}"
+                    class="ak-modal ${this.size} ${this.locked ? "locked" : ""}"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="modal-title"

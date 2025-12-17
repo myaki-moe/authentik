@@ -99,7 +99,7 @@ export abstract class TableModal<T extends object> extends Table<T> {
         return html`<div class="pf-c-backdrop" @click=${this.#backdropListener}>
             <div class="pf-l-bullseye">
                 <div
-                    class="pf-c-modal-box ${this.size}"
+                    class="ak-modal ${this.size}"
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="modal-title"

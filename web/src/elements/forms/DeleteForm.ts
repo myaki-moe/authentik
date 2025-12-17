@@ -94,7 +94,7 @@ export class DeleteForm extends ModalButton {
 
     renderModalInner(): TemplateResult {
         const objName = this.getFormattedObjectName();
-        return html` <div class="pf-c-modal-box__body">
+        return html` <div class="ak-modal__body">
                 <form class="pf-c-form pf-m-horizontal">
                     <p>
                         ${msg(str`Are you sure you want to delete ${this.objectLabel}${objName}?`)}
@@ -108,7 +108,7 @@ export class DeleteForm extends ModalButton {
                               return nothing;
                           }
                           return html`
-                              <section class="pf-c-modal-box__body">
+                              <section class="ak-modal__body">
                                   <form class="pf-c-form pf-m-horizontal">
                                       <p>${msg(str`The following objects use ${objName}`)}</p>
                                       <ul class="pf-c-list">
@@ -145,7 +145,7 @@ export class DeleteForm extends ModalButton {
                       }),
                   )
                 : nothing}
-            <footer class="pf-c-modal-box__footer">
+            <footer class="ak-modal__footer">
                 <ak-spinner-button
                     .callAction=${() => {
                         return this.confirm();

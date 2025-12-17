@@ -10,7 +10,6 @@ import { dateToUTC } from "#common/temporal";
 
 import { isControlElement } from "#elements/AkControlElement";
 import { AKElement } from "#elements/Base";
-import { intersectionObserver } from "#elements/decorators/intersection-observer";
 import { reportValidityDeep } from "#elements/forms/FormGroup";
 import { PreventFormSubmit } from "#elements/forms/helpers";
 import { HorizontalFormElement } from "#elements/forms/HorizontalFormElement";
@@ -218,8 +217,6 @@ function reportInvalidFields(
 export abstract class Form<T = Record<string, unknown>> extends AKElement {
     abstract send(data: T): Promise<unknown>;
 
-    viewportCheck = true;
-
     //#region Properties
 
     @property({ type: String })
@@ -252,16 +249,6 @@ export abstract class Form<T = Record<string, unknown>> extends AKElement {
             }
         `,
     ];
-
-    /**
-     * Called by the render function.
-     *
-     * Blocks rendering the form if the form is not within the
-     * viewport.
-     *
-     */
-    @intersectionObserver()
-    public isInViewport = false;
 
     /**
      * An overridable method for returning a success message after a successful submission.

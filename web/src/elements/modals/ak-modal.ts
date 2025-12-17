@@ -45,6 +45,9 @@ export abstract class AKModal extends AKElement {
         this.#headline = value;
     }
 
+    @property({ type: String, attribute: "close-label", useDefault: true })
+    public closeLabel = msg("Close");
+
     @property({ type: Boolean, attribute: false, reflect: false })
     public set open(value: boolean) {
         if (value) {
@@ -127,8 +130,8 @@ export abstract class AKModal extends AKElement {
 
         parentElement.style.height = parentElement.clientHeight + "px";
 
-        const synchronizeHeight: ResizeObserverCallback = () => {
-            parentElement.style.height = this.scrollHeight + "px";
+        const synchronizeHeight: ResizeObserverCallback = ([entry]) => {
+            parentElement.style.height = entry.contentRect.height + "px";
         };
 
         this.#resizeObserver = new ResizeObserver(synchronizeHeight);
@@ -152,20 +155,6 @@ export abstract class AKModal extends AKElement {
     protected closeListener = () => {
         this.close();
     };
-
-    // #toggleListener = (event: ToggleEvent) => {
-    //     let open: boolean;
-
-    //     // While `ToggleEvent` is the correct type, this covers
-    //     if (event instanceof ToggleEvent) {
-    //         open = event.newState === "open";
-    //     } else {
-    //         open = this.parentElement?.open ?? false;
-    //     }
-
-    //     this.#debug("toggle event:", event, "open:", open);
-    //     this.requestUpdate();
-    // };
 
     //#endregion
 
@@ -225,7 +214,6 @@ export abstract class AKModal extends AKElement {
             return super.render();
         }
 
-        // return html`<div class="pf-c-modal-box">${this.renderContent()}</div>`;
         return [this.renderCloseButton(), this.renderHeader(), this.renderContent()];
     }
 
@@ -254,9 +242,9 @@ export abstract class AKModal extends AKElement {
         return guard(
             [heading],
             () =>
-                html`<header class="pf-c-modal-box__header">
-                    <div class="pf-c-modal-box__title">
-                        <h1 class="pf-c-modal-box__title-text" id="modal-title">
+                html`<header class="ak-modal__header">
+                    <div class="ak-modal__title">
+                        <h1 class="ak-modal__title-text" id="modal-title">
                             ${this.headline}
                             <slot name="header"></slot>
                         </h1>
