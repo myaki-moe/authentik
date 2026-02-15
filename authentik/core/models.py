@@ -503,8 +503,16 @@ class User(SerializerModel, AttributesMixin, AbstractUser):
 
     @cached_property
     def is_superuser(self) -> bool:
-        """Get supseruser status based on membership in a group with superuser status"""
-        return self.all_groups().filter(is_superuser=True).exists()
+        """Get superuser status based on membership in a group with superuser status.
+
+        Single query: check if any direct group OR any ancestor of a direct
+        group has is_superuser=True, instead of materializing the full ancestor
+        chain via all_groups() first."""
+        group_pks = self.groups.values("pk")
+        return Group.objects.filter(
+            Q(pk__in=group_pks) | Q(descendant_nodes__descendant__in=group_pks),
+            is_superuser=True,
+        ).exists()
 
     @property
     def is_staff(self) -> bool:
@@ -693,15 +701,23 @@ class BackchannelProvider(Provider):
 
 
 class ApplicationQuerySet(QuerySet):
+    _provider_related: tuple[tuple[str, ...], tuple[str, ...]] | None = None
+
     def with_provider(self) -> QuerySet[Application]:
-        qs = self.select_related("provider")
-        for subclass in Provider.objects.get_queryset()._get_subclasses_recurse(Provider):
-            qs = qs.select_related(f"provider__{subclass}")
-            # Also prefetch/select through each subclass path to ensure casted instances have access
-            qs = qs.prefetch_related(f"provider__{subclass}__property_mappings")
-            qs = qs.select_related(f"provider__{subclass}__application")
-            qs = qs.select_related(f"provider__{subclass}__backchannel_application")
-        return qs
+        provider_related = ApplicationQuerySet._provider_related
+        if provider_related is None:
+            subclasses = Provider.objects.get_queryset()._get_subclasses_recurse(Provider)
+            select = ["provider"]
+            prefetch = []
+            for subclass in subclasses:
+                select.append(f"provider__{subclass}")
+                select.append(f"provider__{subclass}__application")
+                select.append(f"provider__{subclass}__backchannel_application")
+                prefetch.append(f"provider__{subclass}__property_mappings")
+            provider_related = (tuple(select), tuple(prefetch))
+            ApplicationQuerySet._provider_related = provider_related
+        select, prefetch = provider_related
+        return self.select_related(*select).prefetch_related(*prefetch)
 
 
 class Application(SerializerModel, PolicyBindingModel):
@@ -785,23 +801,34 @@ class Application(SerializerModel, PolicyBindingModel):
                 return url
         return url
 
+    # Pre-split subclass paths: list of (split_levels, depth) tuples
+    _provider_subclass_paths: list[tuple[list[str], int]] | None = None
+
     def get_provider(self) -> Provider | None:
         """Get casted provider instance. Needs Application queryset with_provider"""
         if not self.provider:
             return None
 
+        # Cache the subclass list and pre-split paths — the class hierarchy is
+        # fixed at runtime so we never need to recompute.
+        if Application._provider_subclass_paths is None:
+            subclasses = Provider.objects.get_queryset()._get_subclasses_recurse(Provider)
+            Application._provider_subclass_paths = [
+                (s.split(LOOKUP_SEP), s.count(LOOKUP_SEP)) for s in subclasses
+            ]
+
         candidates = []
         base_class = Provider
-        for subclass in base_class.objects.get_queryset()._get_subclasses_recurse(base_class):
+        for levels, depth in Application._provider_subclass_paths:
             parent = self.provider
-            for level in subclass.split(LOOKUP_SEP):
+            for level in levels:
                 try:
                     parent = getattr(parent, level)
                 except AttributeError:
                     break
             if parent in candidates:
                 continue
-            idx = subclass.count(LOOKUP_SEP)
+            idx = depth
             if type(parent) is not base_class:
                 idx += 1
             candidates.insert(idx, parent)

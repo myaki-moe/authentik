@@ -87,7 +87,11 @@ from authentik.flows.exceptions import FlowNonApplicableException
 from authentik.flows.models import FlowToken
 from authentik.flows.planner import PLAN_CONTEXT_PENDING_USER, FlowPlanner
 from authentik.flows.views.executor import QS_KEY_TOKEN
-from authentik.lib.avatars import get_avatar
+from authentik.lib.avatars import (
+    get_avatar,
+    prefetch_avatar_cache,
+    reset_avatar_cache_prefetch,
+)
 from authentik.lib.utils.reflection import ConditionalInheritance
 from authentik.lib.utils.time import timedelta_from_string, timedelta_string_validator
 from authentik.rbac.api.roles import RoleSerializer
@@ -556,7 +560,27 @@ class UserViewSet(
         ]
     )
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        users = page if page is not None else queryset
+
+        # Batch-fetch avatar cache keys in a single cache.get_many() call
+        # instead of N individual cache.get() calls during serialization.
+        tenant = getattr(request, "tenant", None) or request._request.tenant
+        prefetch_token = None
+        if tenant:
+            prefetch_token = prefetch_avatar_cache(users, tenant.avatars)
+
+        try:
+            serializer = self.get_serializer(users, many=True)
+            return (
+                self.get_paginated_response(serializer.data)
+                if page is not None
+                else Response(serializer.data)
+            )
+        finally:
+            if prefetch_token is not None:
+                reset_avatar_cache_prefetch(prefetch_token)
 
     def _create_recovery_link(
         self, token_duration: str | None, for_email=False

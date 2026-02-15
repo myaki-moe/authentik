@@ -25,11 +25,20 @@ class EnterpriseAuditMiddleware(AuditMiddleware):
         """Check if audit logging is enabled"""
         return apps.get_app_config("authentik_enterprise").enabled()
 
+    # Safe HTTP methods where models are only read, never saved — capturing
+    # previous state via post_init is wasted work (serialize_simple + deepcopy
+    # + cleanse_dict on every instantiated model).
+    _SAFE_METHODS = frozenset(("GET", "HEAD", "OPTIONS"))
+
     def connect(self, request: HttpRequest):
         super().connect(request)
-        if not self.enabled:
-            return
         if not hasattr(request, "request_id"):
+            return
+        # Check method before .enabled — the license check in .enabled is
+        # expensive (crypto verify) and pointless for read-only requests.
+        if request.method in self._SAFE_METHODS:
+            return
+        if not self.enabled:
             return
         post_init.connect(
             partial(self.post_init_handler, request=request),
@@ -39,9 +48,11 @@ class EnterpriseAuditMiddleware(AuditMiddleware):
 
     def disconnect(self, request: HttpRequest):
         super().disconnect(request)
-        if not self.enabled:
-            return
         if not hasattr(request, "request_id"):
+            return
+        if request.method in self._SAFE_METHODS:
+            return
+        if not self.enabled:
             return
         post_init.disconnect(dispatch_uid=request.request_id)
 

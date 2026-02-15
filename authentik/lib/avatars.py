@@ -1,6 +1,7 @@
 """Avatar utils"""
 
 from base64 import b64encode
+from contextvars import ContextVar
 from functools import cache as funccache
 from hashlib import md5, sha256
 from typing import TYPE_CHECKING
@@ -155,6 +156,55 @@ def avatar_mode_generated(user: User, mode: str) -> str | None:
     return f"data:image/svg+xml;base64,{b64encode(svg.encode('utf-8')).decode('utf-8')}"
 
 
+_avatar_cache_prefetch: ContextVar[dict[str, object] | None] = ContextVar(
+    "avatar_cache_prefetch", default=None
+)
+_AVATAR_SENTINEL = object()
+
+
+def avatar_cache_key_for_user(user: User, mode: str) -> tuple[str, str]:
+    """Compute the (hostname_available_key, image_url_key) cache keys for a user."""
+    mail_hash = md5(user.email.lower().encode("utf-8"), usedforsecurity=False).hexdigest()  # nosec
+    formatted_url = mode % {
+        "username": user.username,
+        "mail_hash": mail_hash,
+        "upn": user.attributes.get("upn", ""),
+    }
+    hostname = urlparse(formatted_url).hostname
+    return (
+        f"goauthentik.io/lib/avatars/{hostname}/available",
+        f"goauthentik.io/lib/avatars/{hostname}/{mail_hash}",
+    )
+
+
+def prefetch_avatar_cache(users, modes: str):
+    """Batch-fetch all avatar cache keys for a list of users.
+
+    Call this before serializing a list of users to avoid N+1 cache queries.
+    Results are stored in request-local _avatar_cache_prefetch context."""
+    keys = set()
+    for user in users:
+        for mode in modes.split(","):
+            if mode == "gravatar" or "://" in mode:
+                if mode == "gravatar":
+                    mail_hash = sha256(user.email.lower().encode("utf-8")).hexdigest()
+                    parameters = {"size": "158", "rating": "g", "default": "404"}
+                    url_mode = f"{GRAVATAR_URL}/avatar/{mail_hash}?{urlencode(parameters)}"
+                else:
+                    url_mode = mode
+                host_key, image_key = avatar_cache_key_for_user(user, url_mode)
+                keys.add(host_key)
+                keys.add(image_key)
+    if keys:
+        return _avatar_cache_prefetch.set(cache.get_many(list(keys)))
+    return _avatar_cache_prefetch.set({})
+
+
+def reset_avatar_cache_prefetch(token):
+    """Reset request-local avatar prefetch cache state."""
+    _avatar_cache_prefetch.reset(token)
+
+
 def avatar_mode_url(user: User, mode: str) -> str | None:
     """Format url"""
     mail_hash = md5(user.email.lower().encode("utf-8"), usedforsecurity=False).hexdigest()  # nosec
@@ -168,14 +218,25 @@ def avatar_mode_url(user: User, mode: str) -> str | None:
     hostname = urlparse(formatted_url).hostname
     cache_key_hostname_available = f"goauthentik.io/lib/avatars/{hostname}/available"
 
-    if not cache.get(cache_key_hostname_available, True):
+    # Use prefetched cache if available, otherwise individual lookup
+    prefetch = _avatar_cache_prefetch.get()
+    if prefetch is not None and cache_key_hostname_available in prefetch:
+        if not prefetch[cache_key_hostname_available]:
+            return None
+    elif not cache.get(cache_key_hostname_available, True):
         return None
 
     cache_key_image_url = f"goauthentik.io/lib/avatars/{hostname}/{mail_hash}"
 
-    if cache.has_key(cache_key_image_url):
-        cache.touch(cache_key_image_url)
-        return cache.get(cache_key_image_url)
+    if prefetch is not None and cache_key_image_url in prefetch:
+        return prefetch[cache_key_image_url]
+    elif prefetch is not None:
+        # Key was in the prefetch batch but not found — cache miss
+        pass
+    else:
+        cached = cache.get(cache_key_image_url, _AVATAR_SENTINEL)
+        if cached is not _AVATAR_SENTINEL:
+            return cached
 
     try:
         res = get_http_session().head(formatted_url, timeout=5, allow_redirects=True)

@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from hashlib import sha512
 from ipaddress import ip_address
+from pathlib import Path
 from time import perf_counter, time
 from typing import Any
 
@@ -353,3 +354,42 @@ class LoggingMiddleware:
             runtime=runtime,
             **kwargs,
         )
+
+
+class ProfileMiddleware:
+    """pyinstrument profiling middleware, activated by ?profile query parameter.
+    Only active when DEBUG=True."""
+
+    get_response: Callable[[HttpRequest], HttpResponse]
+
+    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
+        self.get_response = get_response
+        self.enabled = settings.DEBUG
+        if self.enabled:
+            self.logger = get_logger("authentik.profiling")
+            self.profiles_dir = Path(settings.BASE_DIR) / "profiles"
+            self.profiles_dir.mkdir(exist_ok=True)
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        if not self.enabled or "profile" not in request.GET:
+            return self.get_response(request)
+
+        from pyinstrument import Profiler
+
+        file_only = request.GET.get("profile") == "file"
+        profiler = Profiler()
+        profiler.start()
+        response = self.get_response(request)
+        profiler.stop()
+
+        text_output = profiler.output_text()
+        slug = request.path.strip("/").replace("/", "_") or "root"
+        filename = f"{time():.0f}_{request.method}_{slug}.txt"
+        output_path = self.profiles_dir / filename
+        output_path.write_text(text_output)
+        self.logger.info("Profile written", path=str(output_path))
+
+        if not file_only:
+            response = HttpResponse(profiler.output_html(), content_type="text/html")
+
+        return response

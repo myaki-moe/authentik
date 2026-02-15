@@ -559,6 +559,10 @@ if DEBUG:
         "rest_framework.renderers.BrowsableAPIRenderer"
     )
     SHARED_APPS.insert(SHARED_APPS.index("django.contrib.staticfiles"), "daphne")
+    MIDDLEWARE.insert(
+        MIDDLEWARE.index("authentik.root.middleware.LoggingMiddleware") + 1,
+        "authentik.root.middleware.ProfileMiddleware",
+    )
     enable_debug_trace(True)
 
 

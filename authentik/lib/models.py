@@ -40,18 +40,38 @@ class CreatedUpdatedModel(models.Model):
         abstract = True
 
 
+_subclass_cache: dict[type[models.Model], list[str]] = {}
+
+
+def _cached_subclasses(qs):
+    """Cache the result of _get_subclasses_recurse per model class.
+
+    The class hierarchy is fixed at runtime so walking _meta.get_fields()
+    repeatedly is pure waste."""
+    model = qs.model
+    if model not in _subclass_cache:
+        _subclass_cache[model] = qs._get_subclasses_recurse(model)
+    subclasses = _subclass_cache[model]
+    if subclasses:
+        qs = qs.select_related(*subclasses)
+    qs.subclasses = subclasses
+    return qs
+
+
 class InheritanceAutoManager(InheritanceManager):
     """Object manager which automatically selects the subclass"""
 
     def get_queryset(self):
-        return super().get_queryset().select_subclasses()
+        return _cached_subclasses(super().get_queryset())
 
 
 class InheritanceForwardManyToOneDescriptor(models.fields.related.ForwardManyToOneDescriptor):
     """Forward ManyToOne Descriptor that selects subclass. Requires InheritanceAutoManager."""
 
     def get_queryset(self, **hints):
-        return self.field.remote_field.model.objects.db_manager(hints=hints).select_subclasses()
+        return _cached_subclasses(
+            self.field.remote_field.model.objects.db_manager(hints=hints).get_queryset()
+        )
 
 
 class InheritanceForeignKey(models.ForeignKey):
