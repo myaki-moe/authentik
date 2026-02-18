@@ -13,7 +13,6 @@
         "format": "wireit",
         "lint": "eslint --fix .",
         "lint:imports": "knip --config scripts/knip.config.ts",
-        "lint:lockfile": "wireit",
         "lint:types": "wireit",
         "lint-check": "eslint --max-warnings 0 .",
         "lit-analyse": "wireit",
@@ -100,7 +99,7 @@
         "@fortawesome/fontawesome-free": "^7.2.0",
         "@goauthentik/api": "^2026.2.0-rc1-1770744803",
         "@goauthentik/core": "^1.0.0",
-        "@goauthentik/esbuild-plugin-live-reload": "^1.4.0",
+        "@goauthentik/esbuild-plugin-live-reload": "^1.5.0",
         "@goauthentik/eslint-config": "^1.2.1",
         "@goauthentik/prettier-config": "^3.4.0",
         "@goauthentik/tsconfig": "^1.0.5",
@@ -198,10 +197,14 @@
         "@esbuild/darwin-arm64": "^0.27.0",
         "@esbuild/linux-arm64": "^0.27.0",
         "@esbuild/linux-x64": "^0.27.0",
+        "@goauthentik/prettier-config-dev": "../packages/prettier-config",
         "@rollup/rollup-darwin-arm64": "^4.57.1",
         "@rollup/rollup-linux-arm64-gnu": "^4.57.1",
         "@rollup/rollup-linux-x64-gnu": "^4.57.1",
-        "chromedriver": "^145.0.3"
+        "@swagger-api/apidom-parser-adapter-json": "1.5.1",
+        "@swagger-api/apidom-parser-adapter-yaml-1-2": "^1.0.1",
+        "chromedriver": "^145.0.3",
+        "tree-sitter": "^0.22.4"
     },
     "workspaces": [
         "./packages/*"
@@ -266,11 +269,6 @@
                 "build-locales"
             ]
         },
-        "lint:lockfile": {
-            "__comment": "The lockfile-lint package does not have an option to ensure resolved hashes are set everywhere",
-            "shell": true,
-            "command": "sh ./scripts/lint-lockfile.sh package-lock.json"
-        },
         "lit-analyse": {
             "command": "lit-analyzer src"
         },
@@ -279,8 +277,7 @@
             "dependencies": [
                 "lint",
                 "lint:types",
-                "lint:components",
-                "lint:lockfile"
+                "lint:components"
             ]
         },
         "storybook:build": {
@@ -301,7 +298,7 @@
     },
     "engines": {
         "node": ">=24",
-        "npm": ">=11.6.2"
+        "npm": ">=11.10.1"
     },
     "devEngines": {
         "runtime": {
@@ -311,11 +308,12 @@
         },
         "packageManager": {
             "name": "npm",
-            "version": "11.10.1",
+            "version": ">=11.10.1",
             "onFail": "warn"
         }
     },
-    "prettier": "@goauthentik/prettier-config",
+    "packageManager": "npm@11.10.1+sha512.c286afb98d8e803150d4afed07d407b14b96f7cf6729fbec29337f879a86c92fb7f8186f5cdfc30364cdcf1e7af496857d3aab113e5b110347c1584593e53582",
+    "prettier": "./prettier.config.mjs",
     "overrides": {
         "@goauthentik/esbuild-plugin-live-reload": {
             "esbuild": "$esbuild"

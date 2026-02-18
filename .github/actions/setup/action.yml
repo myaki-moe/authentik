@@ -15,7 +15,7 @@ runs:
     - name: Install apt deps & cleanup
       if: ${{ contains(inputs.dependencies, 'system') || contains(inputs.dependencies, 'python') }}
       shell: bash
-      run: |
+      run: | # shell
         sudo apt-get remove --purge man-db
         sudo apt-get update
         sudo apt-get install --no-install-recommends -y libpq-dev openssl libxmlsec1-dev pkg-config gettext krb5-multidev libkrb5-dev heimdal-multidev libclang-dev krb5-kdc krb5-user krb5-admin-server
@@ -25,7 +25,7 @@ runs:
       uses: astral-sh/setup-uv@eac588ad8def6316056a12d4907a9d4d84ff7a3b # v5
       with:
         enable-cache: true
-    - name: Setup python
+    - name: Setup Python
       if: ${{ contains(inputs.dependencies, 'python') }}
       uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v5
       with:
@@ -34,14 +34,11 @@ runs:
       if: ${{ contains(inputs.dependencies, 'python') }}
       shell: bash
       run: uv sync --all-extras --dev --frozen
-    - name: Setup node
+    - name: Setup Node.js
       if: ${{ contains(inputs.dependencies, 'node') }}
-      uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v4
+      uses: ./.github/actions/setup-node
       with:
-        node-version-file: web/package.json
-        cache: "npm"
-        cache-dependency-path: web/package-lock.json
-        registry-url: 'https://registry.npmjs.org'
+        working-directory: web
     - name: Setup go
       if: ${{ contains(inputs.dependencies, 'go') }}
       uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v5
@@ -55,14 +52,17 @@ runs:
     - name: Setup dependencies
       if: ${{ contains(inputs.dependencies, 'runtime') }}
       shell: bash
-      run: |
+      run: | # shell
         export PSQL_TAG=${{ inputs.postgresql_version }}
         docker compose -f .github/actions/setup/compose.yml up -d
-        cd web && npm ci
+
+        node ./scripts/node/lint-lockfile.mjs
+
+        corepack npm install --prefix web
     - name: Generate config
       if: ${{ contains(inputs.dependencies, 'python') }}
       shell: uv run python {0}
-      run: |
+      run: | # py
         from authentik.lib.generators import generate_id
         from yaml import safe_dump
 

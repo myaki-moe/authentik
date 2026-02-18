@@ -85,7 +85,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: checkout stable
-        run: |
+        run: | # shell
           set -e -o pipefail
           cp -R .github ..
           cp -R scripts ..
@@ -107,7 +107,7 @@ jobs:
       - name: run migrations to stable
         run: uv run python -m lifecycle.migrate
       - name: checkout current code
-        run: |
+        run: | # shell
           set -x
           git fetch
           git reset --hard HEAD
@@ -214,19 +214,19 @@ jobs:
       - name: Setup e2e env (chrome, etc)
         run: |
           docker compose -f tests/e2e/compose.yml up -d --quiet-pull
+      - uses: ./.github/actions/setup-node
       - id: cache-web
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
         with:
           path: web/dist
           key: ${{ runner.os }}-web-${{ hashFiles('web/package-lock.json', 'package-lock.json', 'web/src/**', 'web/packages/sfe/src/**') }}-b
-      - name: prepare web ui
+      - name: Prepare Web UI
         if: steps.cache-web.outputs.cache-hit != 'true'
-        working-directory: web
-        run: |
-          npm ci
-          make -C .. gen-client-ts
-          npm run build
-          npm run build:sfe
+        run: | # shell
+          make node-install
+          make gen-client-ts
+          corepack npm run build --prefix web
+          corepack npm run build:sfe --prefix web
       - name: run e2e
         run: |
           uv run coverage run manage.py test ${{ matrix.job.glob }}
@@ -262,14 +262,12 @@ jobs:
         with:
           path: web/dist
           key: ${{ runner.os }}-web-${{ hashFiles('web/package-lock.json', 'web/src/**', 'web/packages/sfe/src/**') }}-b
-      - name: prepare web ui
+      - name: Prepare Web UI
         if: steps.cache-web.outputs.cache-hit != 'true'
-        working-directory: web
-        run: |
-          npm ci
-          make -C .. gen-client-ts
-          npm run build
-          npm run build:sfe
+        run: | # shell
+          make gen-client-ts
+          corepack npm run build --prefix web
+          corepack npm run build:sfe --prefix web
       - name: run conformance
         run: |
           uv run coverage run manage.py test ${{ matrix.job.glob }}

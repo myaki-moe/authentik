@@ -4,8 +4,8 @@
     "private": true,
     "scripts": {
         "lint": "run-s lint:spellcheck lint:lockfile",
-        "lint:lockfile": "echo 'Skipping lockfile linting'",
-        "lint:node": "echo 'Skipping node linting'",
+        "lint:lockfile": "./scripts/node/lint-lockfile.mjs",
+        "lint:node": "./scripts/node/lint-runtime.mjs",
         "lint:spellcheck": "echo 'Skipping spellcheck linting'"
     },
     "type": "module",
@@ -17,7 +17,8 @@
         "@typescript-eslint/eslint-plugin": "^8.48.1",
         "@typescript-eslint/parser": "^8.48.1",
         "eslint": "^9.39.1",
-        "prettier": "^3.7.4",
+        "npm-run-all": "^4.1.5",
+        "prettier": "^3.8.1",
         "prettier-plugin-packagejson": "^3.0.0",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.48.1"
@@ -30,15 +31,16 @@
     "devEngines": {
         "runtime": {
             "name": "node",
-            "onFail": "ignore",
-            "version": "24"
+            "onFail": "warn",
+            "version": ">=24"
         },
         "packageManager": {
             "name": "npm",
-            "version": "11.10.1",
-            "onFail": "ignore"
+            "version": ">=11.10.1",
+            "onFail": "warn"
         }
     },
+    "packageManager": "npm@11.10.1+sha512.c286afb98d8e803150d4afed07d407b14b96f7cf6729fbec29337f879a86c92fb7f8186f5cdfc30364cdcf1e7af496857d3aab113e5b110347c1584593e53582",
     "prettier": "@goauthentik/prettier-config",
     "overrides": {
         "format-imports": {

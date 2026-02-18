@@ -10,7 +10,6 @@
         "check-types": "tsc -b",
         "docusaurus": "docusaurus",
         "lint": "eslint --fix .",
-        "lint:lockfile": "echo 'Skipping lockfile linting'",
         "lint-check": "eslint --max-warnings 0 .",
         "prettier": "prettier --write .",
         "prettier-check": "prettier --check .",
@@ -19,9 +18,9 @@
     },
     "dependencies": {
         "@eslint/js": "^9.39.1",
-        "@goauthentik/eslint-config": "^1.2.1",
-        "@goauthentik/prettier-config": "^3.4.0",
-        "@goauthentik/tsconfig": "^1.0.5",
+        "@goauthentik/eslint-config": "../packages/eslint-config",
+        "@goauthentik/prettier-config": "../packages/prettier-config",
+        "@goauthentik/tsconfig": "../packages/tsconfig",
         "@types/node": "^25.0.0",
         "@typescript-eslint/eslint-plugin": "^8.48.0",
         "@typescript-eslint/parser": "^8.48.0",
@@ -49,10 +48,6 @@
         "lightningcss-linux-arm64-gnu": "1.30.2",
         "lightningcss-linux-x64-gnu": "1.30.2"
     },
-    "engines": {
-        "node": ">=24",
-        "npm": ">=11.6.2"
-    },
     "workspaces": [
         "vendored/*",
         "docusaurus-theme",
@@ -60,6 +55,23 @@
         "integrations",
         "docs"
     ],
+    "engines": {
+        "node": ">=24",
+        "npm": ">=11.10.1"
+    },
+    "devEngines": {
+        "runtime": {
+            "name": "node",
+            "onFail": "error",
+            "version": ">=24"
+        },
+        "packageManager": {
+            "name": "npm",
+            "version": ">=11.6.2",
+            "onFail": "warn"
+        }
+    },
+    "packageManager": "npm@11.10.1+sha512.c286afb98d8e803150d4afed07d407b14b96f7cf6729fbec29337f879a86c92fb7f8186f5cdfc30364cdcf1e7af496857d3aab113e5b110347c1584593e53582",
     "prettier": "@goauthentik/prettier-config",
     "overrides": {
         "@goauthentik/api-docs": {
@@ -93,18 +105,6 @@
         "postman-code-generators": {
             "detect-package-manager": "file:./vendored/detect-package-manager",
             "shelljs": "0.10.0"
-        }
-    },
-    "devEngines": {
-        "runtime": {
-            "name": "node",
-            "onFail": "error",
-            "version": ">=24"
-        },
-        "packageManager": {
-            "name": "npm",
-            "version": ">=11.6.2",
-            "onFail": "warn"
         }
     }
 }
