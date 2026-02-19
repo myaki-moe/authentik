@@ -2,6 +2,7 @@ import "#elements/forms/HorizontalFormElement";
 import "#elements/forms/SearchSelect/index";
 
 import { DEFAULT_CONFIG } from "#common/api/config";
+import { docLink } from "#common/global";
 import { parseAPIResponseError, pluckErrorDetail } from "#common/errors/network";
 
 import { AKElement } from "#elements/Base";
@@ -12,7 +13,7 @@ import { AdminApi, AdminFileListUsageEnum } from "@goauthentik/api";
 import { IDGenerator } from "@goauthentik/core/id";
 
 import { msg } from "@lit/localize";
-import { html } from "lit";
+import { html, TemplateResult } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -56,7 +57,7 @@ export class AKFileSearchInput extends AKElement {
     public blankable = false;
 
     @property({ type: String })
-    public help: string | null = null;
+    public help: string | TemplateResult | null = null;
 
     @property({ type: String, useDefault: true })
     public usage: AdminFileListUsageEnum = AdminFileListUsageEnum.Media;
@@ -121,6 +122,23 @@ export class AKFileSearchInput extends AKElement {
     }
 
     render() {
+        const defaultHelp = msg(
+            "You can also enter a URL (https://...), Font Awesome icon (fa://fa-icon-name), or upload a new file.",
+        );
+        const helpText = this.help
+            ? typeof this.help === "string"
+                ? html`<span>${this.help}</span>`
+                : this.help
+            : html`<span>${defaultHelp}</span>`;
+        const docsHelp = html`
+            <a
+                target="_blank"
+                rel="noopener noreferrer"
+                href=${docLink("/customize/files/")}
+            >
+                ${msg("Learn more in the file documentation.")}
+            </a>
+        `;
         return html` <ak-form-element-horizontal name=${ifDefined(this.name ?? undefined)}>
             ${AKLabel(
                 {
@@ -143,13 +161,9 @@ export class AKFileSearchInput extends AKElement {
                 creatable
             >
             </ak-search-select>
-            ${this.help
-                ? html`<p class="pf-c-form__helper-text">${this.help}</p>`
-                : html`<p class="pf-c-form__helper-text">
-                      ${msg(
-                          "You can also enter a URL (https://...), Font Awesome icon (fa://fa-icon-name), or upload a new file.",
-                      )}
-                  </p>`}
+            <p class="pf-c-form__helper-text">
+                ${helpText} ${docsHelp}
+            </p>
         </ak-form-element-horizontal>`;
     }
 }
