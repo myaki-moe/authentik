@@ -2,18 +2,7 @@
 ---
 name: Docker Build & Push (AMD64)
 
-on:
-  workflow_call:
-    inputs:
-      image_name:
-        required: true
-        type: string
-      release:
-        default: false
-        type: boolean
-    outputs:
-      image-digest:
-        value: ${{ jobs.build.outputs.image-digest }}
+on: [push]
 
 jobs:
   build:
