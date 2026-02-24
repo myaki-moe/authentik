@@ -103,7 +103,7 @@ migrate: ## Run the Authentik Django server's migrations
 i18n-extract: core-i18n-extract web-i18n-extract  ## Extract strings that require translation into files to send to a translation service
 
 aws-cfn: node-install
-	corepack npm i --prefix lifecycle/aws
+	corepack npm install --prefix lifecycle/aws
 	$(UV) run corepack npm run aws-cfn --prefix lifecycle/aws
 
 run-server:  ## Run the main authentik server process
@@ -208,7 +208,7 @@ gen-client-ts: gen-clean-ts  ## Build and install the authentik API for Typescri
 		--git-repo-id authentik \
 		--git-user-id goauthentik
 
-	cd ${PWD}/${GEN_API_TS} && corepack npm i
+	cd ${PWD}/${GEN_API_TS} && corepack npm install
 	cd ${PWD}/${GEN_API_TS} && corepack npm link
 	cd ${PWD}/web && corepack npm link @goauthentik/api
 

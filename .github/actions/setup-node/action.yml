@@ -58,7 +58,7 @@ runs:
       shell: bash
       run: | #shell
         node ./scripts/node/lint-lockfile.mjs
-        corepack npm install
+        corepack npm ci
     - name: Setup Node.js (Working Directory)
       if: ${{ contains(inputs.dependencies, 'working-directory') }}
       uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v4
@@ -73,5 +73,4 @@ runs:
       shell: bash
       run: | # shell
         corepack install
-        node ./scripts/node/lint-lockfile.mjs ${{ inputs.working-directory }}
-        corepack npm install --prefix ${{ inputs.working-directory }}
+        corepack npm ci --prefix ${{ inputs.working-directory }}

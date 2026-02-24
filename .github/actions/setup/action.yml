@@ -55,10 +55,7 @@ runs:
       run: | # shell
         export PSQL_TAG=${{ inputs.postgresql_version }}
         docker compose -f .github/actions/setup/compose.yml up -d
-
-        node ./scripts/node/lint-lockfile.mjs
-
-        corepack npm install --prefix web
+        corepack npm ci --prefix web
     - name: Generate config
       if: ${{ contains(inputs.dependencies, 'python') }}
       shell: uv run python {0}
