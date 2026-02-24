@@ -8,6 +8,10 @@ import { exec } from "node:child_process";
 import { resolve, sep } from "node:path";
 import { promisify } from "node:util";
 
+import { createLogger } from "./logging.mjs";
+
+const logger = createLogger("commands");
+
 export class CommandError extends Error {
     name = "CommandError";
 
@@ -53,6 +57,8 @@ function createTag(prefix = "") {
     /** @type {CommandTag} */
     return (strings, ...expressions) => {
         const command = (prefix ? prefix + " " : "") + String.raw(strings, ...expressions);
+
+        logger.debug(command);
 
         return (options) =>
             execAsync(command, options)

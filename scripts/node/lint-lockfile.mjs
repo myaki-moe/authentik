@@ -151,8 +151,6 @@ async function run() {
 
     // MARK: Regenerate
 
-    logger.info("Running npm install --package-lock-only...");
-
     const npmVersion = await npm`--version`({ useCorepack });
 
     logger.info(`Detected npm version: ${npmVersion}`);
